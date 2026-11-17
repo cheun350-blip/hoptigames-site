@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DDOS GUN</title>
+<meta name="description" content="Connection refused. The DATA is being deleted. 2027.">
+<meta name="theme-color" content="#05060a">
+<meta property="og:title" content="DDOS GUN">
+<meta property="og:description" content="Connection refused. The DATA is being deleted. 2027.">
+<meta property="og:image" content="https://hoptigames.com/og.png">
+<meta property="og:url" content="https://hoptigames.com/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+  :root{
+    --bg:#05060a; --fg:#b9c4d6; --dim:#4c566a; --blue:#2f6bff; --cyan:#4fd8ff;
+    --yellow:#f5d300; --red:#ff3344; --green:#3cff6e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--fg)}
+  body{
+    font:15px/1.55 ui-monospace,"Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;
+    overflow:hidden; cursor:text;
+  }
+  /* noise + scanlines */
+  #noise{position:fixed;inset:0;width:100%;height:100%;opacity:.07;pointer-events:none;z-index:3}
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:4;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px);
+  }
+  body::before{ /* vignette */
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:5;
+    background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.75) 100%);
+  }
+  main{
+    position:relative;z-index:2;height:100%;max-width:980px;margin:0 auto;
+    padding:clamp(18px,4vh,48px) clamp(16px,4vw,40px);
+    display:flex;flex-direction:column;
+  }
+  /* logo */
+  .logo{position:relative;width:min(100%,760px);margin:0 auto clamp(18px,4vh,40px);
+        aspect-ratio:1020/190;opacity:0;transition:opacity .15s}
+  .logo.on{opacity:1}
+  .logo img{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;user-select:none;-webkit-user-drag:none}
+  .logo .s1,.logo .s2{opacity:0}
+  .logo.glitch .s1{opacity:1;clip-path:var(--c1);transform:translateX(var(--x1))}
+  .logo.glitch .s2{opacity:1;clip-path:var(--c2);transform:translateX(var(--x2));filter:hue-rotate(160deg)}
+  .logo.glitch .base{transform:translateX(var(--x0))}
+  /* terminal */
+  #term{flex:1;overflow-y:auto;scrollbar-width:none;white-space:pre-wrap;word-break:break-word}
+  #term::-webkit-scrollbar{display:none}
+  .l{min-height:1.55em}
+  .dim{color:var(--dim)} .ok{color:var(--green)} .warn{color:var(--yellow)}
+  .err{color:var(--red)} .hi{color:var(--cyan)} .w{color:#fff}
+  .big{font-size:clamp(18px,3.2vw,28px);letter-spacing:.08em;color:#fff;
+       text-shadow:-2px 0 var(--red),2px 0 var(--blue)}
+  a{color:var(--cyan);text-decoration:none;border-bottom:1px dashed currentColor}
+  a:hover{color:#fff}
+  .prompt{display:flex;gap:.6ch;align-items:baseline}
+  .ps{color:var(--yellow);flex:none}
+  #in{flex:1;background:transparent;border:0;outline:0;color:#fff;font:inherit;caret-color:transparent;min-width:0}
+  .cur{display:inline-block;width:.6em;height:1.1em;background:var(--yellow);vertical-align:-2px;animation:b 1s steps(1) infinite}
+  @keyframes b{50%{opacity:0}}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .chips button{background:transparent;border:1px solid var(--dim);color:var(--fg);font:inherit;font-size:13px;
+                padding:3px 10px;cursor:pointer}
+  .chips button:hover{border-color:var(--yellow);color:var(--yellow)}
+  @media (hover:hover) and (pointer:fine){ .chips{display:none} }
+  .shake{animation:sh .35s linear}
+  @keyframes sh{20%{transform:translate(-6px,2px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-3px,3px)}80%{transform:translate(3px,-1px)}}
+  .blackout{animation:bo 1.2s steps(6)}
+  @keyframes bo{0%,100%{opacity:1}10%,30%{opacity:0}20%{opacity:.6}40%,90%{opacity:0}}
+  @media (prefers-reduced-motion:reduce){ .cur{animation:none} #noise{display:none} }
+</style>
+</head>
+<body>
+<canvas id="noise"></canvas>
+<main id="main">
+  <div class="logo" id="logo" aria-label="DDOS GUN">
+    <img class="base" src="logo.svg" alt="DDOS GUN">
+    <img class="s1" src="logo.svg" alt="" aria-hidden="true">
+    <img class="s2" src="logo.svg" alt="" aria-hidden="true">
+  </div>
+  <div id="term" role="log" aria-live="polite"></div>
+  <div class="chips" id="chips"></div>
+</main>
+<noscript><p style="position:fixed;bottom:20px;left:20px;color:#f5d300;font-family:monospace;z-index:9">&gt; script blocked. connection refused. 2027.</p></noscript>
+
+<script>
+(() => {
+  /* ======= TEXTES : tout est modifiable ici ======= */
+  const CONTACT = "contact@hoptigames.com";
+  const BOOT = [
+    ["dim", "> resolving hoptigames.com ..."],
+    ["dim", "> route found // RING 3"],
+    ["",    "> opening socket ", "dots", ["ok", " OK"]],
+    ["",    "> handshake ", "dots", ["ok", " OK"]],
+    ["warn","> WARNING: unregistered NetDiver signature"],
+    ["err", "> CONNECTION REFUSED"],
+    ["", ""],
+    ["LOGO"],
+    ["big", "THE DATA IS BEING DELETED."],
+    ["dim", "> purge scheduled. eta: 2027"],
+    ["", ""],
+    ["dim", "type 'help'. or don't."],
+  ];
+  const FILES = {
+    "readme.txt": [
+      ["", "this node is not public."],
+      ["", "if you can read this, the firewall is older than it looks."],
+    ],
+    "fragment_00.log": [
+      ["dim", "[recovered // partial // author unknown]"],
+      ["", "we stopped asking questions long before we stopped needing answers."],
+      ["", "it kept everything. that was the request."],
+      ["", "nobody asked it to give anything back."],
+      ["dim", "[end of fragment // 14 more corrupted]"],
+    ],
+    "contact.txt": [
+      ["", "outbound channel: ", ["link", CONTACT, "mailto:" + CONTACT]],
+    ],
+    "steam.lnk": [
+      ["err", "ACCESS DENIED."],
+      ["dim", "endpoint not deployed yet. come back later. it will be worth the wishlist."],
+    ],
+  };
+  /* ================================================= */
+
+  const term = document.getElementById("term");
+  const logo = document.getElementById("logo");
+  const main = document.getElementById("main");
+  const chips = document.getElementById("chips");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const sleep = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+  let busy = true, history = [], hi = 0, input = null;
+
+  function span(cls, text, href) {
+    const el = document.createElement(href ? "a" : "span");
+    if (cls) el.className = cls;
+    el.textContent = text;
+    if (href) { el.href = href; el.className = ""; }
+    return el;
+  }
+  function line(cls = "") { const d = document.createElement("div"); d.className = "l " + cls; term.appendChild(d); scroll(); return d; }
+  function scroll() { term.scrollTop = term.scrollHeight; }
+
+  async function type(el, text, speed = 14) {
+    if (reduce) { el.append(text); return; }
+    for (const ch of text) { el.append(ch); scroll(); await sleep(speed + Math.random() * speed); }
+  }
+  async function print(spec, speed) {
+    const [cls, text, ...rest] = spec;
+    const d = line(cls);
+    await type(d, text, speed);
+    for (const part of rest) {
+      if (part === "dots") { for (let i = 0; i < 6; i++) { d.append("."); await sleep(110); } }
+      else if (Array.isArray(part)) {
+        if (part[0] === "link") d.append(span("", part[1], part[2]));
+        else { const s = span(part[0], ""); d.append(s); await type(s, part[1], speed); }
+      }
+    }
+  }
+
+  /* --- logo glitch --- */
+  function glitchOnce(dur = 120) {
+    const r = () => Math.random();
+    const a = r() * 80, b = a + 5 + r() * 25, c = r() * 80, e = c + 5 + r() * 20;
+    logo.style.setProperty("--c1", `inset(${a}% 0 ${100 - b}% 0)`);
+    logo.style.setProperty("--c2", `inset(${c}% 0 ${100 - e}% 0)`);
+    logo.style.setProperty("--x1", `${(r() - .5) * 40}px`);
+    logo.style.setProperty("--x2", `${(r() - .5) * 30}px`);
+    logo.style.setProperty("--x0", `${(r() - .5) * 6}px`);
+    logo.classList.add("glitch");
+    setTimeout(() => logo.classList.remove("glitch"), dur);
+  }
+  function glitchLoop() {
+    if (reduce) return;
+    const burst = 1 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < burst; i++) setTimeout(() => glitchOnce(60 + Math.random() * 90), i * 110);
+    setTimeout(glitchLoop, 1800 + Math.random() * 4200);
+  }
+  async function showLogo() {
+    for (let i = 0; i < 5; i++) { logo.classList.toggle("on"); glitchOnce(70); await sleep(70); }
+    logo.classList.add("on"); glitchLoop();
+  }
+
+  /* --- noise --- */
+  const cv = document.getElementById("noise"), cx = cv.getContext("2d");
+  function sizeNoise() { cv.width = innerWidth / 3; cv.height = innerHeight / 3; }
+  sizeNoise(); addEventListener("resize", sizeNoise);
+  function noise() {
+    const img = cx.createImageData(cv.width, cv.height), d = img.data;
+    for (let i = 0; i < d.length; i += 4) { const v = Math.random() * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+    cx.putImageData(img, 0, 0);
+    if (!reduce) setTimeout(() => requestAnimationFrame(noise), 70);
+  }
+  noise();
+
+  /* --- commandes --- */
+  const CMDS = {
+    help: async () => {
+      for (const [c, t] of [["help","this"],["ls","list files"],["cat <file>","read a file"],["whoami","identify"],["ping","test the node"],["date","system time"],["clear","clear screen"],["exit","disconnect"]])
+        await print(["", "  " + c.padEnd(12) + "  ", ["dim", t]], 2);
+    },
+    ls: async () => { for (const f of Object.keys(FILES)) await print([f.endsWith(".lnk") ? "warn" : "hi", "  " + f], 4); },
+    dir: () => CMDS.ls(),
+    cat: async (arg) => {
+      if (!arg) return print(["err", "cat: missing file"]);
+      const f = FILES[arg.trim()];
+      if (!f) return print(["err", `cat: ${arg}: no such file`]);
+      for (const l of f) await print(l, 10);
+    },
+    open: (arg) => CMDS.cat(arg),
+    steam: () => CMDS.cat("steam.lnk"),
+    contact: () => CMDS.cat("contact.txt"),
+    whoami: async () => { await print(["", "guest"]); await print(["dim", "not a NetDiver. not yet."]); },
+    date: async () => { await print(["", new Date().toUTCString()]); await print(["dim", "system clock unreliable. the purge is not."]); },
+    ping: async () => {
+      for (let i = 0; i < 4; i++) {
+        const ms = 12 + Math.floor(Math.random() * 30);
+        await print(["dim", `reply from ring 3: bytes=32 time=${ms}ms`], 3); await sleep(250);
+      }
+      await print(["warn", "you are being watched back."]);
+    },
+    ddos: async () => { main.classList.remove("shake"); void main.offsetWidth; main.classList.add("shake"); glitchOnce(300);
+                        await print(["err", "flood detected. nice reflex. wrong target."]); },
+    sudo: () => print(["err", "permission denied. nice try."]),
+    rm: () => print(["err", "rm: deletion is not your job here."]),
+    ring: async () => { await print(["", "current depth: RING 3"]); await print(["dim", "deeper levels sealed. survive first."]); },
+    hello: () => print(["dim", "..."]),
+    clear: () => { term.innerHTML = ""; },
+    cls: () => CMDS.clear(),
+    exit: async () => {
+      await print(["err", "> disconnecting"]);
+      main.classList.add("blackout"); await sleep(1200); main.classList.remove("blackout");
+      term.innerHTML = ""; logo.classList.remove("on"); await boot();
+    },
+  };
+
+  async function run(raw) {
+    const cmd = raw.trim(); if (!cmd) return;
+    history.push(cmd); hi = history.length;
+    const [name, ...args] = cmd.split(/\s+/);
+    const fn = CMDS[name.toLowerCase()];
+    if (fn) await fn(args.join(" "));
+    else await print(["err", `${name}: command not found`]);
+  }
+
+  function promptLine() {
+    const d = line("prompt");
+    const ps = span("ps", "guest@ring3:~$");
+    input = document.createElement("input");
+    input.id = "in"; input.autocomplete = "off"; input.spellcheck = false;
+    input.setAttribute("autocapitalize", "off"); input.setAttribute("aria-label", "terminal input");
+    const wrap = document.createElement("span"); wrap.style.flex = "1"; wrap.style.display = "flex";
+    const mirror = span("w", ""); const cur = span("cur", "");
+    input.style.position = "absolute"; input.style.opacity = "0"; input.style.pointerEvents = "none";
+    input.addEventListener("input", () => { mirror.textContent = input.value; });
+    input.addEventListener("keydown", async e => {
+      if (e.key === "Enter") {
+        const v = input.value; input.remove(); cur.remove();
+        busy = true; await run(v); busy = false; promptLine();
+      } else if (e.key === "ArrowUp") { if (hi > 0) { input.value = history[--hi]; mirror.textContent = input.value; } e.preventDefault(); }
+      else if (e.key === "ArrowDown") { if (hi < history.length) { input.value = history[++hi] || ""; mirror.textContent = input.value; } e.preventDefault(); }
+      else if (e.key === "Tab") {
+        e.preventDefault();
+        const [n, a] = input.value.split(/\s+/);
+        if (a !== undefined) { const m = Object.keys(FILES).find(f => f.startsWith(a)); if (m) input.value = n + " " + m; }
+        else { const m = Object.keys(CMDS).find(c => c.startsWith(n)); if (m) input.value = m; }
+        mirror.textContent = input.value;
+      }
+    });
+    wrap.append(mirror, cur);
+    d.append(ps, wrap, input);
+    input.focus({ preventScroll: true });
+    scroll();
+  }
+
+  /* chips (écrans tactiles) */
+  ["help", "ls", "cat fragment_00.log", "cat contact.txt", "steam"].forEach(c => {
+    const b = document.createElement("button"); b.textContent = c;
+    b.onclick = e => { e.stopPropagation(); if (busy || !input) return; input.value = c; input.dispatchEvent(new Event("input")); input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" })); };
+    chips.appendChild(b);
+  });
+
+  document.addEventListener("click", () => { if (input && !busy) input.focus({ preventScroll: true }); });
+
+  async function boot() {
+    busy = true;
+    await sleep(400);
+    for (const spec of BOOT) {
+      if (spec[0] === "LOGO") { await showLogo(); continue; }
+      await print(spec, spec[0] === "big" ? 45 : 12);
+      await sleep(spec[0] === "err" ? 600 : 160);
+    }
+    busy = false;
+    promptLine();
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
